@@ -1,0 +1,10 @@
+boto3==1.0.0
+botocore==1.0.0
+docutils==0.22
+futures==2.2.0
+jmespath==0.7.1
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+s3transfer==0.13.1
+six==1.17.0
+urllib3==2.5.0
