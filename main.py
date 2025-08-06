@@ -1,6 +1,9 @@
 import boto3
 import json
 
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 bedrock_client = boto3.client("bedrock-runtime", region_name="us-west-2")
 bedrock_agent_client = boto3.client("bedrock-agent-runtime", region_name="us-west-2")
@@ -94,7 +97,7 @@ Return only the full-sentence outline.
 
 
 def main():
-  kb_id = "ZLOXX0ZTQP"
+  kb_id = os.getenv("KB_ID")
   user_input = "What is the capital of France?"
 
   search_results = retrieve_knowledge_results(kb_id, user_input)
