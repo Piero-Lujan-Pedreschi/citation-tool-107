@@ -57,34 +57,55 @@ def build_prompt_from_kb(user_input, search_results):
    prompt = prompt.replace("$search_results$", search_results)
    return prompt.strip()
 
+
+
 def call_model_with_prompt(prompt):
-   payload = {
-      "anthropic_version": "bedrock-2023-05-31",
-      "max_tokens": 1000,
-      "messages": [
-         {"role": "user", "content":prompt}
-      ]
-   }
+    payload = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 1000,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ]
+    }
 
-   response = bedrock_client.invoke_model(
-      modelId = "anthropic.claude-3-5-sonnet-20241022-v2:0",
-      body = json.dumps(payload)
-   )
+    response = bedrock_client.invoke_model_with_response_stream(
+        modelId="anthropic.claude-3-5-sonnet-20241022-v2:0",
+        body=json.dumps(payload)
+    )
 
-   body = json.loads(response["body"].read())
-   return body["content"][0]["text"]
+    stream = response.get("body")
+
+    print("\nAssistant: ", end="", flush=True)
+
+    for event in stream:
+        chunk = event.get("chunk")
+        if not chunk:
+            continue
+        
+        # decode bytes, then parse JSON
+        chunk_data = json.loads(chunk["bytes"].decode("utf-8"))
+
+        if chunk_data.get("type") == "content_block_delta":
+            delta = chunk_data.get("delta", {})
+            text = delta.get("text", "")
+            if text:
+                print(text, end="", flush=True)
+
+    print()  # final newline after streaming ends
+
+
 
 def chat_loop_with_kb():
    print("Welcome to the chat! Please enter your essay topic below!")
    while True:
-      user_input = input("\You: ")
+      user_input = input("You: ")
       if user_input.strip().lower() in ["exit", "quit"]:
          break
       
       search_results = retrieve_knowledge_results(kb_id, user_input)
       prompt = build_prompt_from_kb(user_input, search_results)
-      response = call_model_with_prompt(prompt)
-      print("\nAssistant: ", response)
+      # print("\nAssistant: ", end="", flush=True)
+      call_model_with_prompt(prompt)
 
 
 
