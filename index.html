@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Study Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <header>
+            <div class="header-title">
+                <img src="./RCCD_Seal_CMY.png" alt="Riverside Community College" class="college-logo">
+                <h1><strong>RiverWrite</strong></h1>
+            </div>
+            <p>R.C.C.D's own writing companion</p>
+        </header>
+        
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    <div class="avatar">🤖</div>
+                    <div class="content">
+                        <p>Welcome, space explorer! I'm here to guide you through the galaxy of essay writing. I won't give you answers, but I'll help you discover them yourself. What topic are you working on?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="messageInput" placeholder="Ask about your essay topic, structure, or research..." />
+                <input type="file" id="fileInput" accept=".txt,.doc,.docx,.pdf" style="display: none;" />
+                <button id="uploadButton" onclick="document.getElementById('fileInput').click()">📎</button>
+                <button id="sendButton">🚀</button>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <h3>🌟 Writing Tools</h3>
+            <button class="tool-btn" onclick="suggestOutline()">Outline Helper</button>
+            <button class="tool-btn" onclick="suggestResearch()">Research Guide</button>
+            <button class="tool-btn" onclick="suggestStructure()">Essay Structure</button>
+            <button class="tool-btn" onclick="clearChat()">New Topic</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
