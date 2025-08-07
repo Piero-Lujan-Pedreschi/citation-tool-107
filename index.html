@@ -136,46 +136,49 @@
             allChats = chats; // Store for later use
             const historyList = document.getElementById('chatHistoryList');
             historyList.innerHTML = '';
-
-            // Group chats by user-bot pairs
-            const pairs = [];
+            
+            // Group chats by conversation (every user-bot pair)
+            const conversations = [];
             for (let i = 0; i < chats.length; i += 2) {
                 if (chats[i] && chats[i + 1]) {
-                    pairs.push({
+                    conversations.push({
                         userMessage: chats[i].userMessage,
                         botResponse: chats[i + 1].botResponse,
                         timestamp: chats[i].timestamp,
-                        botTimestamp: chats[i + 1].timestamp,
-                        pairIndex: i
+                        startIndex: i
                     });
                 }
             }
-
-            pairs.slice(-10).reverse().forEach((pair, index) => {
+            
+            conversations.slice(-10).reverse().forEach((conv, index) => {
                 const historyItem = document.createElement('div');
                 historyItem.className = 'chat-history-item';
                 historyItem.innerHTML = `
                     <div class="chat-content">
-                        <div class="chat-preview">${pair.userMessage.substring(0, 40)}...</div>
-                        <div class="chat-time">${new Date(pair.timestamp).toLocaleDateString()}</div>
+                        <div class="chat-preview">${conv.userMessage.substring(0, 40)}...</div>
+                        <div class="chat-time">${new Date(conv.timestamp).toLocaleDateString()}</div>
                     </div>
-                    <div class="chat-menu" onclick="event.stopPropagation(); deleteChat('${pair.timestamp}', this.parentElement)">🗑️</div>
+                    <div class="chat-menu" onclick="event.stopPropagation(); deleteChat('${conv.timestamp}', this.parentElement)">🗑️</div>
                 `;
-                // Add click event to load only this user-bot pair
-                historyItem.addEventListener('click', () => loadChatPair(pair.pairIndex));
+                
+                // Add click event to load this conversation
+                historyItem.addEventListener('click', () => loadSpecificChat(conv.startIndex));
+                
                 historyList.appendChild(historyItem);
             });
         }
-
-        // Load only the selected user-bot pair
-        function loadChatPair(pairIndex) {
+        
+        // Load specific chat conversation
+        function loadSpecificChat(startIndex) {
             const chatMessages = document.getElementById('chatMessages');
-            chatMessages.innerHTML = '';
-            if (allChats[pairIndex]) {
-                addMessage(allChats[pairIndex].userMessage, 'user');
-            }
-            if (allChats[pairIndex + 1]) {
-                addMessage(allChats[pairIndex + 1].botResponse, 'assistant');
+            chatMessages.innerHTML = ''; // Clear current messages
+            
+            // Load all messages up to and including this conversation
+            for (let i = 0; i <= startIndex + 1 && i < allChats.length; i++) {
+                const chat = allChats[i];
+                const messageType = i % 2 === 0 ? 'user' : 'assistant';
+                const message = i % 2 === 0 ? chat.userMessage : chat.botResponse;
+                addMessage(message, messageType);
             }
         }
         
