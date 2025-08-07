@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - NeuroScript</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><path d=%22M8 12c0-4 3-7 7-7s7 3 7 7c0 2-1 4-2 5 1 1 2 3 2 5 0 3-2 5-5 5s-5-2-5-5c0-2 1-4 2-5-1-1-2-3-2-5z%22 fill=%22%23333%22 stroke=%22%23666%22 stroke-width=%220.5%22/><circle cx=%2212%22 cy=%2210%22 r=%221%22 fill=%22%23666%22/><circle cx=%2218%22 cy=%2210%22 r=%221%22 fill=%22%23666%22/><path d=%22M24 20h6 M25 18h5 M26 22h4%22 stroke=%22%23333%22 stroke-width=%221%22/></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>NeuroScript</h1>
+                <p>R.C.C.D's Writing Assistant</p>
+            </div>
+            
+            <div class="auth-form-container">
+                <form id="signinForm" class="auth-form">
+                    <h2>Welcome Back</h2>
+                    
+                    <div class="form-group">
+                        <input type="email" id="email" name="email" placeholder="Email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="password" id="password" name="password" placeholder="Password" required>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn">Sign In</button>
+                    
+                    <div class="auth-links">
+                        <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+                        <p><a href="index.html" class="guest-link">Continue as Guest</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="auth.js"></script>
+</body>
+</html>
