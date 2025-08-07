@@ -5,19 +5,87 @@ const sendButton = document.getElementById('sendButton');
 // Flask LLM endpoint configuration
 const LLM_ENDPOINT = 'http://localhost:5000/chat'; // Local Flask server
 
-function addMessage(content, isUser = false) {
+// Typewriter effect function with paragraph support
+function typeWriter(element, text, speed = 3) {
+    return new Promise((resolve) => {
+        // Split text into paragraphs
+        const paragraphs = text.split(/\n\n|\n/).filter(p => p.trim().length > 0);
+        element.innerHTML = '';
+        
+        let currentParagraph = 0;
+        let currentChar = 0;
+        
+        function type() {
+            if (currentParagraph < paragraphs.length) {
+                if (currentChar === 0) {
+                    // Create new paragraph element
+                    const p = document.createElement('p');
+                    element.appendChild(p);
+                }
+                
+                const currentP = element.lastElementChild;
+                const paragraph = paragraphs[currentParagraph];
+                
+                if (currentChar < paragraph.length) {
+                    currentP.innerHTML += paragraph.charAt(currentChar);
+                    currentChar++;
+                    
+                    // Check if this paragraph contains subpoints and indent
+                    const text = currentP.textContent.trim();
+                    if (text.match(/^\s*[a-e]\.|^\s*[1-5]\./)) {
+                        currentP.style.marginLeft = '20px';
+                    }
+                    
+                    setTimeout(type, speed);
+                } else {
+                    // Move to next paragraph
+                    currentParagraph++;
+                    currentChar = 0;
+                    setTimeout(type, speed * 10); // Pause between paragraphs
+                }
+            } else {
+                resolve();
+            }
+        }
+        type();
+    });
+}
+
+function addMessage(content, isUser = false, useTypewriter = false) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+    messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
     
     messageDiv.innerHTML = `
-        <div class="avatar">${isUser ? '👨‍🚀' : '🤖'}</div>
-        <div class="content">
-            <p>${content}</p>
+        <div class="message-content">
+            <div class="avatar">${isUser ? '👨🚀' : '🦆'}</div>
+            <div class="text">
+            </div>
         </div>
     `;
     
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    const textElement = messageDiv.querySelector('.text');
+    
+    if (useTypewriter && !isUser && !content.includes('<span class="thinking-dots">')) {
+        // Use typewriter effect for AI responses
+        typeWriter(textElement, content, 3);
+    } else {
+        // Format content into paragraphs for immediate display
+        let formattedContent;
+        if (content.includes('<span class="thinking-dots">')) {
+            formattedContent = `<p>${content}</p>`;
+        } else {
+            const paragraphs = content.split(/\n\n|\n/).filter(p => p.trim().length > 0);
+            formattedContent = paragraphs.map(p => {
+                const trimmed = p.trim();
+                const isSubpoint = trimmed.match(/^\s*[a-e]\.|^\s*[1-5]\./); 
+                return `<p${isSubpoint ? ' style="margin-left: 20px;"' : ''}>${trimmed}</p>`;
+            }).join('');
+        }
+        textElement.innerHTML = formattedContent;
+    }
 }
 
 async function generateResponse(userMessage) {
@@ -45,6 +113,33 @@ async function generateResponse(userMessage) {
     }
 }
 
+async function generateResponseWithFile(userMessage, fileContent, fileName) {
+    try {
+        const response = await fetch(LLM_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: userMessage,
+                fileContent: fileContent,
+                fileName: fileName,
+                context: 'academic_writing_assistant'
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.response || data.message || 'Sorry, I had trouble processing that. Could you try rephrasing?';
+    } catch (error) {
+        console.error('Error calling LLM endpoint:', error);
+        return 'I\'m having trouble connecting right now. Please check that the LLM server is running and try again.';
+    }
+}
+
 async function sendMessage() {
     const message = messageInput.value.trim();
     if (!message) return;
@@ -53,13 +148,13 @@ async function sendMessage() {
     messageInput.value = '';
     
     // Show typing indicator
-    addMessage('🤖 Thinking...', false);
+    addMessage('🦆 Thinking <span class="thinking-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>', false);
     
     try {
         const response = await generateResponse(message);
         // Remove typing indicator
         chatMessages.removeChild(chatMessages.lastChild);
-        addMessage(response);
+        addMessage(response, false, true);
     } catch (error) {
         // Remove typing indicator
         chatMessages.removeChild(chatMessages.lastChild);
@@ -70,12 +165,12 @@ async function sendMessage() {
 async function suggestOutline() {
     const message = "I'd like help structuring my essay outline";
     addMessage(message, true);
-    addMessage('🤖 Thinking...', false);
+    addMessage('🦆 Thinking <span class="thinking-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>', false);
     
     try {
         const response = await generateResponse(message);
         chatMessages.removeChild(chatMessages.lastChild);
-        addMessage(response);
+        addMessage(response, false, true);
     } catch (error) {
         chatMessages.removeChild(chatMessages.lastChild);
         addMessage('Sorry, I encountered an error. Please try again.');
@@ -85,12 +180,12 @@ async function suggestOutline() {
 async function suggestResearch() {
     const message = "I need guidance on research strategies";
     addMessage(message, true);
-    addMessage('🤖 Thinking...', false);
+    addMessage('🦆 Thinking <span class="thinking-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>', false);
     
     try {
         const response = await generateResponse(message);
         chatMessages.removeChild(chatMessages.lastChild);
-        addMessage(response);
+        addMessage(response, false, true);
     } catch (error) {
         chatMessages.removeChild(chatMessages.lastChild);
         addMessage('Sorry, I encountered an error. Please try again.');
@@ -100,12 +195,12 @@ async function suggestResearch() {
 async function suggestStructure() {
     const message = "How should I structure my essay?";
     addMessage(message, true);
-    addMessage('🤖 Thinking...', false);
+    addMessage('🦆 Thinking <span class="thinking-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>', false);
     
     try {
         const response = await generateResponse(message);
         chatMessages.removeChild(chatMessages.lastChild);
-        addMessage(response);
+        addMessage(response, false, true);
     } catch (error) {
         chatMessages.removeChild(chatMessages.lastChild);
         addMessage('Sorry, I encountered an error. Please try again.');
@@ -114,10 +209,12 @@ async function suggestStructure() {
 
 function clearChat() {
     chatMessages.innerHTML = `
-        <div class="message bot-message">
-            <div class="avatar">🤖</div>
-            <div class="content">
-                <p>Ready for a new writing adventure! What topic are you exploring this time?</p>
+        <div class="message assistant-message">
+            <div class="message-content">
+                <div class="avatar">🦆</div>
+                <div class="text">
+                    <p>Hello! I'm your academic writing assistant. I can help you structure essays, develop outlines, and guide your research. What would you like to work on today?</p>
+                </div>
             </div>
         </div>
     `;
@@ -134,17 +231,27 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
         addMessage(`📎 Uploaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, true);
-        (async () => {
-            addMessage('🤖 Thinking...', false);
+        
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const fileContent = event.target.result;
+            addMessage('🦆 Thinking <span class="thinking-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>', false);
+            
             try {
-                const response = await generateResponse(`I've uploaded a file called "${file.name}". Can you help me analyze and improve my work?`);
+                const response = await generateResponseWithFile(`Please analyze this document and provide feedback:`, fileContent, file.name);
                 chatMessages.removeChild(chatMessages.lastChild);
-                addMessage(response);
+                addMessage(response, false, true);
             } catch (error) {
                 chatMessages.removeChild(chatMessages.lastChild);
-                addMessage('I can see your file upload. How can I help you with your writing today?');
+                addMessage('Sorry, I had trouble reading the file. Please try again.');
             }
-        })();
+        };
+        
+        if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+            reader.readAsText(file);
+        } else {
+            addMessage('Currently only .txt files are supported. Please upload a text file.', false);
+        }
     }
 });
 
