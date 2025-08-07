@@ -7,14 +7,8 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><path d=%22M8 12c0-4 3-7 7-7s7 3 7 7c0 2-1 4-2 5 1 1 2 3 2 5 0 3-2 5-5 5s-5-2-5-5c0-2 1-4 2-5-1-1-2-3-2-5z%22 fill=%22%23333%22 stroke=%22%23666%22 stroke-width=%220.5%22/><circle cx=%2212%22 cy=%2210%22 r=%221%22 fill=%22%23666%22/><circle cx=%2218%22 cy=%2210%22 r=%221%22 fill=%22%23666%22/><path d=%22M24 20h6 M25 18h5 M26 22h4%22 stroke=%22%23333%22 stroke-width=%221%22/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
-    <!-- PDF.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-
-    <!-- Mammoth.js for DOCX support -->
-    <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
 </head>
 <body>
     <div class="app">
@@ -22,41 +16,42 @@
             <div class="sidebar-header">
                 <h2>NeuroScript</h2>
                 <p>R.C.C.D's Writing Assistant</p>
-                <div class="auth-section">
-                    <div id="guestMode" class="guest-info">
-                        <span>Guest Mode</span>
-                        <button id="signInBtn" class="auth-link-btn">Sign In</button>
-                    </div>
-                    <div id="userMode" class="user-info" style="display: none;">
-                        <span id="userName"></span>
-                        <button id="logoutBtn" class="logout-btn">Logout</button>
-                    </div>
-                </div>
             </div>
             <div class="sidebar-content">
-                <button class="new-chat-btn" onclick="clearChat()">New chat</button>
-                <div class="tools">
-                    <button class="tool-btn" onclick="suggestOutline()">Outline Helper</button>
-                    <hr>
-                    <button class="tool-btn" onclick="suggestResearch()">Research Guide</button>
-                    <hr>
-                    <button class="tool-btn" onclick="suggestStructure()">Essay Structure</button>
-                    <hr>
+                <div>
+                    <button class="new-chat-btn" onclick="clearChat()">New chat</button>
+                    <div class="tools">
+                        <button class="tool-btn" onclick="suggestOutline()">Outline Helper</button>
+                        <hr>
+                        <button class="tool-btn" onclick="suggestResearch()">Research Guide</button>
+                        <hr>
+                        <button class="tool-btn" onclick="suggestStructure()">Essay Structure</button>
+                        <hr>
+                    </div>
+                    <div class="saved-chats" id="savedChats" style="display: none;">
+                        <h3>Saved Chats</h3>
+                        <div id="chatsList"></div>
+                    </div>
                 </div>
-                <div id="chatHistory" class="chat-history-section" style="display: none;">
-                    <h3>Chat History</h3>
-                    <div id="chatHistoryList" class="chat-history-list"></div>
+                <div class="auth-buttons" id="authButtons">
+                    <button class="auth-btn" onclick="showLogin()">Log In</button>
+                    <button class="auth-btn" onclick="showSignup()">Sign Up</button>
+                </div>
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <p id="userName"></p>
+                    <button class="auth-btn" onclick="logout()">Logout</button>
                 </div>
             </div>
         </div>
         
         <div class="main-content">
+            <div id="userWelcome" class="user-welcome" style="display: none;"></div>
             <div class="chat-messages" id="chatMessages">
                 <div class="message assistant-message">
                     <div class="message-content">
                         <div class="avatar">🦆</div>
                         <div class="text">
-                            <p>Hello! I'm your academic writing assistant. I can help you structure essays, develop outlines, and guide your research. What would you like to work on today?</p>
+                            <p>Welcome to NeuroScript! I'm your Riverside Community College District academic writing assistant. I can help you create structured outlines, develop research strategies, and organize your essays. How can I assist you today?</p>
                         </div>
                     </div>
                 </div>
@@ -65,7 +60,7 @@
             <div class="input-area">
                 <div class="input-container">
                     <input type="text" id="messageInput" placeholder="Message NeuroScript..." />
-                    <input type="file" id="fileInput" accept=".txt,.docx,.pdf" style="display: none;" />
+                    <input type="file" id="fileInput" accept=".txt,.doc,.docx,.pdf" style="display: none;" />
                     <button id="uploadButton" onclick="document.getElementById('fileInput').click()">📎</button>
                     <button id="sendButton">↑</button>
                 </div>
@@ -74,117 +69,5 @@
     </div>
     
     <script src="script.js"></script>
-    <script>
-        // Check authentication on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('userToken');
-            const userName = localStorage.getItem('userName');
-            const userEmail = localStorage.getItem('userEmail');
-            
-            if (token && userName) {
-                // User is signed in
-                document.getElementById('guestMode').style.display = 'none';
-                document.getElementById('userMode').style.display = 'block';
-                document.getElementById('userName').textContent = `Welcome, ${userName}`;
-                
-                // Load chat history
-                loadChatHistory(userEmail);
-                
-                // Logout functionality
-                document.getElementById('logoutBtn').addEventListener('click', function() {
-                    localStorage.removeItem('userToken');
-                    localStorage.removeItem('userName');
-                    localStorage.removeItem('userEmail');
-                    location.reload();
-                });
-            } else {
-                // Guest mode
-                document.getElementById('guestMode').style.display = 'block';
-                document.getElementById('userMode').style.display = 'none';
-                
-                // Sign in button
-                document.getElementById('signInBtn').addEventListener('click', function() {
-                    window.location.href = 'signin.html';
-                });
-            }
-        });
-        
-        // Load chat history function
-        async function loadChatHistory(email) {
-            try {
-                const response = await fetch(`http://localhost:5000/chat-history/${email}`);
-                const data = await response.json();
-                
-                if (response.ok && data.chats.length > 0) {
-                    // Show chat history section
-                    document.getElementById('chatHistory').style.display = 'block';
-                    
-                    // Load chat messages
-                    const chatMessages = document.getElementById('chatMessages');
-                    chatMessages.innerHTML = ''; // Clear default message
-                    
-                    data.chats.forEach(chat => {
-                        // Add user message
-                        addMessage(chat.userMessage, 'user');
-                        // Add bot response
-                        addMessage(chat.botResponse, 'assistant');
-                    });
-                    
-                    // Populate sidebar chat history
-                    populateChatHistorySidebar(data.chats);
-                }
-            } catch (error) {
-                console.error('Failed to load chat history:', error);
-            }
-        }
-        
-        // Populate chat history sidebar
-        function populateChatHistorySidebar(chats) {
-            const historyList = document.getElementById('chatHistoryList');
-            historyList.innerHTML = '';
-            
-            // Group chats by conversation (every user-bot pair)
-            const conversations = [];
-            for (let i = 0; i < chats.length; i += 2) {
-                if (chats[i] && chats[i + 1]) {
-                    conversations.push({
-                        userMessage: chats[i].userMessage,
-                        botResponse: chats[i + 1].botResponse,
-                        timestamp: chats[i].timestamp
-                    });
-                }
-            }
-            
-            conversations.slice(-10).reverse().forEach((conv, index) => {
-                const historyItem = document.createElement('div');
-                historyItem.className = 'chat-history-item';
-                historyItem.innerHTML = `
-                    <div class="chat-preview">${conv.userMessage.substring(0, 40)}...</div>
-                    <div class="chat-time">${new Date(conv.timestamp).toLocaleDateString()}</div>
-                `;
-                historyList.appendChild(historyItem);
-            });
-        }
-        
-        // Add message to chat (helper function)
-        function addMessage(message, type) {
-            const chatMessages = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}-message`;
-            
-            const avatar = type === 'user' ? '👨' : '🤖';
-            messageDiv.innerHTML = `
-                <div class="message-content">
-                    <div class="avatar">${avatar}</div>
-                    <div class="text">
-                        <p>${message}</p>
-                    </div>
-                </div>
-            `;
-            
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-    </script>
 </body>
 </html>
