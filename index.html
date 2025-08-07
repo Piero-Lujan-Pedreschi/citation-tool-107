@@ -3,44 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stellar Study Assistant</title>
+    <title>NeuroScript</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><path d=%22M8 12c0-4 3-7 7-7s7 3 7 7c0 2-1 4-2 5 1 1 2 3 2 5 0 3-2 5-5 5s-5-2-5-5c0-2 1-4 2-5-1-1-2-3-2-5z%22 fill=%22%23333%22 stroke=%22%23666%22 stroke-width=%220.5%22/><circle cx=%2212%22 cy=%2210%22 r=%221%22 fill=%22%23666%22/><circle cx=%2218%22 cy=%2210%22 r=%221%22 fill=%22%23666%22/><path d=%22M24 20h6 M25 18h5 M26 22h4%22 stroke=%22%23333%22 stroke-width=%221%22/></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="stars"></div>
-    <div class="container">
-        <header>
-            <div class="header-title">
-                <img src="./RCCD_Seal_CMY.png" alt="Riverside Community College" class="college-logo">
-                <h1><strong>RiverWrite</strong></h1>
+    <div class="app">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>NeuroScript</h2>
+                <p>R.C.C.D's Writing Assistant</p>
             </div>
-            <p>R.C.C.D's own writing companion</p>
-        </header>
+            <div class="sidebar-content">
+                <button class="new-chat-btn" onclick="clearChat()">New chat</button>
+                <div class="tools">
+                    <button class="tool-btn" onclick="suggestOutline()">Outline Helper</button>
+                    <hr>
+                    <button class="tool-btn" onclick="suggestResearch()">Research Guide</button>
+                    <hr>
+                    <button class="tool-btn" onclick="suggestStructure()">Essay Structure</button>
+                    <hr>
+                </div>
+            </div>
+        </div>
         
-        <div class="chat-container">
+        <div class="main-content">
             <div class="chat-messages" id="chatMessages">
-                <div class="message bot-message">
-                    <div class="avatar">🤖</div>
-                    <div class="content">
-                        <p>Welcome, space explorer! I'm here to guide you through the galaxy of essay writing. I won't give you answers, but I'll help you discover them yourself. What topic are you working on?</p>
+                <div class="message assistant-message">
+                    <div class="message-content">
+                        <div class="avatar">🦆</div>
+                        <div class="text">
+                            <p>Hello! I'm your academic writing assistant. I can help you structure essays, develop outlines, and guide your research. What would you like to work on today?</p>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="input-container">
-                <input type="text" id="messageInput" placeholder="Ask about your essay topic, structure, or research..." />
-                <input type="file" id="fileInput" accept=".txt,.doc,.docx,.pdf" style="display: none;" />
-                <button id="uploadButton" onclick="document.getElementById('fileInput').click()">📎</button>
-                <button id="sendButton">🚀</button>
+            <div class="input-area">
+                <div class="input-container">
+                    <input type="text" id="messageInput" placeholder="Message NeuroScript..." />
+                    <input type="file" id="fileInput" accept=".txt,.doc,.docx,.pdf" style="display: none;" />
+                    <button id="uploadButton" onclick="document.getElementById('fileInput').click()">📎</button>
+                    <button id="sendButton">↑</button>
+                </div>
             </div>
-        </div>
-        
-        <div class="sidebar">
-            <h3>🌟 Writing Tools</h3>
-            <button class="tool-btn" onclick="suggestOutline()">Outline Helper</button>
-            <button class="tool-btn" onclick="suggestResearch()">Research Guide</button>
-            <button class="tool-btn" onclick="suggestStructure()">Essay Structure</button>
-            <button class="tool-btn" onclick="clearChat()">New Topic</button>
         </div>
     </div>
     
