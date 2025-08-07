@@ -1,5 +1,5 @@
 // Authentication JavaScript
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://localhost:3000';
 
 // Sign Up Form Handler
 if (document.getElementById('signupForm')) {

@@ -29,6 +29,18 @@
             </div>
             <div class="sidebar-content">
                 <button class="new-chat-btn" onclick="startNewChat()">New chat</button>
+                <div class="accessibility-section" style="margin-bottom: 18px;">
+                    <label for="accessibilityDropdown" style="font-weight:600; color:#fff;">Accessibility Needs</label>
+                    <div style="position:relative;">
+                        <button id="accessibilityDropdownBtn" style="width:100%;background:#1e3a8a;color:#fff;padding:8px 12px;border:none;border-radius:6px;font-size:1em;font-weight:500;cursor:pointer;text-align:left;">Select needs ▼</button>
+                        <div id="accessibilityDropdownMenu" style="display:none;position:absolute;top:110%;left:0;width:100%;background:#1e3a8a;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:10;padding:8px 0;">
+                            <label style="display:block; margin-bottom:4px; color:#fff;"><input type="checkbox" class="accessibility-checkbox" value="ADHD"> ADHD <span style="color:#fff;font-size:12px;">→ Short prompts + summaries</span></label>
+                            <label style="display:block; margin-bottom:4px; color:#fff;"><input type="checkbox" class="accessibility-checkbox" value="Dyslexia"> Dyslexia <span style="color:#fff;font-size:12px;">→ Text-to-speech / speech-to-text</span></label>
+                            <label style="display:block; margin-bottom:4px; color:#fff;"><input type="checkbox" class="accessibility-checkbox" value="ESL"> ESL <span style="color:#fff;font-size:12px;">→ Simpler vocabulary</span></label>
+                            <label style="display:block; margin-bottom:4px; color:#fff;"><input type="checkbox" class="accessibility-checkbox" value="Anxiety"> Anxiety <span style="color:#fff;font-size:12px;">→ Gentle encouragement</span></label>
+                        </div>
+                    </div>
+                </div>
                 <div class="tools">
                     <button class="tool-btn" onclick="suggestOutline()">Outline Helper</button>
                     <hr>
@@ -47,14 +59,7 @@
          <div class="main-content">
 
             <div class="chat-messages" id="chatMessages">
-                <div class="message assistant-message">
-                    <div class="message-content">
-                        <div class="avatar">🤖</div>
-                        <div class="text">
-                            <p>Hello! I'm your academic writing assistant. I can help you structure essays, develop outlines, and guide your research. What would you like to work on today?</p>
-                        </div>
-                    </div>
-                </div>
+                <!-- Welcome message will be injected by script.js -->
             </div>
             
            <div class="input-area">
@@ -108,7 +113,7 @@
         // Load chat history sidebar only
         async function loadChatHistorySidebar(email) {
             try {
-                const response = await fetch(`http://localhost:5000/chat-history/${email}`);
+                const response = await fetch(`http://localhost:3000/chat-history/${email}`);
                 const data = await response.json();
                 
                 if (response.ok && data.chats.length > 0) {
@@ -131,49 +136,46 @@
             allChats = chats; // Store for later use
             const historyList = document.getElementById('chatHistoryList');
             historyList.innerHTML = '';
-            
-            // Group chats by conversation (every user-bot pair)
-            const conversations = [];
+
+            // Group chats by user-bot pairs
+            const pairs = [];
             for (let i = 0; i < chats.length; i += 2) {
                 if (chats[i] && chats[i + 1]) {
-                    conversations.push({
+                    pairs.push({
                         userMessage: chats[i].userMessage,
                         botResponse: chats[i + 1].botResponse,
                         timestamp: chats[i].timestamp,
-                        startIndex: i
+                        botTimestamp: chats[i + 1].timestamp,
+                        pairIndex: i
                     });
                 }
             }
-            
-            conversations.slice(-10).reverse().forEach((conv, index) => {
+
+            pairs.slice(-10).reverse().forEach((pair, index) => {
                 const historyItem = document.createElement('div');
                 historyItem.className = 'chat-history-item';
                 historyItem.innerHTML = `
                     <div class="chat-content">
-                        <div class="chat-preview">${conv.userMessage.substring(0, 40)}...</div>
-                        <div class="chat-time">${new Date(conv.timestamp).toLocaleDateString()}</div>
+                        <div class="chat-preview">${pair.userMessage.substring(0, 40)}...</div>
+                        <div class="chat-time">${new Date(pair.timestamp).toLocaleDateString()}</div>
                     </div>
-                    <div class="chat-menu" onclick="event.stopPropagation(); deleteChat('${conv.timestamp}', this.parentElement)">🗑️</div>
+                    <div class="chat-menu" onclick="event.stopPropagation(); deleteChat('${pair.timestamp}', this.parentElement)">🗑️</div>
                 `;
-                
-                // Add click event to load this conversation
-                historyItem.addEventListener('click', () => loadSpecificChat(conv.startIndex));
-                
+                // Add click event to load only this user-bot pair
+                historyItem.addEventListener('click', () => loadChatPair(pair.pairIndex));
                 historyList.appendChild(historyItem);
             });
         }
-        
-        // Load specific chat conversation
-        function loadSpecificChat(startIndex) {
+
+        // Load only the selected user-bot pair
+        function loadChatPair(pairIndex) {
             const chatMessages = document.getElementById('chatMessages');
-            chatMessages.innerHTML = ''; // Clear current messages
-            
-            // Load all messages up to and including this conversation
-            for (let i = 0; i <= startIndex + 1 && i < allChats.length; i++) {
-                const chat = allChats[i];
-                const messageType = i % 2 === 0 ? 'user' : 'assistant';
-                const message = i % 2 === 0 ? chat.userMessage : chat.botResponse;
-                addMessage(message, messageType);
+            chatMessages.innerHTML = '';
+            if (allChats[pairIndex]) {
+                addMessage(allChats[pairIndex].userMessage, 'user');
+            }
+            if (allChats[pairIndex + 1]) {
+                addMessage(allChats[pairIndex + 1].botResponse, 'assistant');
             }
         }
         
@@ -183,7 +185,7 @@
             if (!userEmail) return;
             
             try {
-                const response = await fetch(`http://localhost:5000/delete-chat`, {
+                const response = await fetch(`http://localhost:3000/delete-chat`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',

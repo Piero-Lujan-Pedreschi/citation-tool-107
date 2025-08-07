@@ -3,7 +3,7 @@ const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 
 // Flask LLM endpoint configuration
-const LLM_ENDPOINT = 'http://localhost:5000/chat'; // Local Flask server
+const LLM_ENDPOINT = 'http://localhost:3000/chat'; // Local Flask server
 
 // Typewriter effect function with paragraph support
 function typeWriter(element, text, speed = 3) {
@@ -97,6 +97,8 @@ function addMessage(content, isUser = false, useTypewriter = false) {
 async function generateResponse(userMessage) {
     try {
         const userEmail = localStorage.getItem('userEmail');
+        // Get selected accessibility needs
+        const selectedNeeds = Array.from(document.querySelectorAll('.accessibility-checkbox:checked')).map(cb => cb.value);
         const response = await fetch(LLM_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -105,14 +107,15 @@ async function generateResponse(userMessage) {
             body: JSON.stringify({
                 message: userMessage,
                 userEmail: userEmail,
-                context: 'academic_writing_assistant'
+                context: 'academic_writing_assistant',
+                accessibilityNeeds: selectedNeeds
             })
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         return data.response || data.message || 'Sorry, I had trouble processing that. Could you try rephrasing?';
     } catch (error) {
@@ -153,13 +156,27 @@ async function generateResponseWithFile(userMessage, fileContent, fileName) {
 async function sendMessage() {
     const message = messageInput.value.trim();
     if (!message) return;
-    
+
     addMessage(message, true);
     messageInput.value = '';
-    
+
+    // Keyword detection for satisfaction/goodbye
+    const satisfactionKeywords = [
+        "i'm done", "i am done", "i'm satisfied", "i am satisfied", "thank you", "thanks", "that's all", "that's it", "i'm finished", "i am finished", "goodbye", "bye"
+    ];
+    const lowerMessage = message.toLowerCase();
+    if (satisfactionKeywords.some(kw => lowerMessage.includes(kw))) {
+        addMessage(
+          "Great job! You now have a structured outline to build on. Keep working, or export your outline anytime. I’m here if you need more help!",
+          false,
+          true
+        );
+        return;
+    }
+
     // Show typing indicator
     addMessage('🦆 Thinking <span class="thinking-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>', false);
-    
+
     try {
         const response = await generateResponse(message);
         // Remove typing indicator
@@ -223,7 +240,7 @@ function clearChat() {
             <div class="message-content">
                 <div class="avatar">🤖</div>
                 <div class="text">
-                    <p>Hello! I'm your academic writing assistant. I can help you structure essays, develop outlines, and guide your research. What would you like to work on today?</p>
+                    <p>Welcome to NeuroScript. I’m here to help you turn your thoughts into a clear outline. Ready to get started?</p>
                 </div>
             </div>
         </div>
@@ -299,3 +316,28 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 });
 
 messageInput.focus();
+
+// Show welcome message when chat loads
+window.addEventListener('DOMContentLoaded', function() {
+    clearChat();
+
+    // Accessibility dropdown logic
+    const dropdownBtn = document.getElementById('accessibilityDropdownBtn');
+    const dropdownMenu = document.getElementById('accessibilityDropdownMenu');
+    if (dropdownBtn && dropdownMenu) {
+        dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', function(e) {
+            if (!dropdownMenu.contains(e.target) && e.target !== dropdownBtn) {
+                dropdownMenu.style.display = 'none';
+            }
+        });
+        // Update button text with selected needs
+        dropdownMenu.addEventListener('change', function() {
+            const selected = Array.from(dropdownMenu.querySelectorAll('.accessibility-checkbox:checked')).map(cb => cb.value);
+            dropdownBtn.textContent = selected.length ? selected.join(', ') + ' ▼' : 'Select needs ▼';
+        });
+    }
+});
