@@ -57,7 +57,7 @@ function addMessage(content, isUser = false, useTypewriter = false) {
     
     messageDiv.innerHTML = `
         <div class="message-content">
-            <div class="avatar">${isUser ? '👨🚀' : '🦆'}</div>
+            <div class="avatar">${isUser ? '👨' : '🤖'}</div>
             <div class="text">
             </div>
         </div>
@@ -86,10 +86,17 @@ function addMessage(content, isUser = false, useTypewriter = false) {
         }
         textElement.innerHTML = formattedContent;
     }
+    
+    // Update sidebar chat history for authenticated users
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail && isUser) {
+        updateChatHistorySidebar(content);
+    }
 }
 
 async function generateResponse(userMessage) {
     try {
+        const userEmail = localStorage.getItem('userEmail');
         const response = await fetch(LLM_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -97,6 +104,7 @@ async function generateResponse(userMessage) {
             },
             body: JSON.stringify({
                 message: userMessage,
+                userEmail: userEmail,
                 context: 'academic_writing_assistant'
             })
         });
@@ -115,6 +123,7 @@ async function generateResponse(userMessage) {
 
 async function generateResponseWithFile(userMessage, fileContent, fileName) {
     try {
+        const userEmail = localStorage.getItem('userEmail');
         const response = await fetch(LLM_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -122,6 +131,7 @@ async function generateResponseWithFile(userMessage, fileContent, fileName) {
             },
             body: JSON.stringify({
                 message: userMessage,
+                userEmail: userEmail,
                 fileContent: fileContent,
                 fileName: fileName,
                 context: 'academic_writing_assistant'
@@ -211,13 +221,41 @@ function clearChat() {
     chatMessages.innerHTML = `
         <div class="message assistant-message">
             <div class="message-content">
-                <div class="avatar">🦆</div>
+                <div class="avatar">🤖</div>
                 <div class="text">
                     <p>Hello! I'm your academic writing assistant. I can help you structure essays, develop outlines, and guide your research. What would you like to work on today?</p>
                 </div>
             </div>
         </div>
     `;
+}
+
+// Update chat history sidebar with new message
+function updateChatHistorySidebar(userMessage) {
+    const userEmail = localStorage.getItem('userEmail');
+    if (!userEmail) return;
+    
+    const historyList = document.getElementById('chatHistoryList');
+    if (!historyList) return;
+    
+    // Show chat history section if hidden
+    document.getElementById('chatHistory').style.display = 'block';
+    
+    // Add new chat item to top
+    const historyItem = document.createElement('div');
+    historyItem.className = 'chat-history-item';
+    historyItem.innerHTML = `
+        <div class="chat-preview">${userMessage.substring(0, 40)}...</div>
+        <div class="chat-time">${new Date().toLocaleDateString()}</div>
+    `;
+    
+    // Insert at the beginning
+    historyList.insertBefore(historyItem, historyList.firstChild);
+    
+    // Keep only last 10 items
+    while (historyList.children.length > 10) {
+        historyList.removeChild(historyList.lastChild);
+    }
 }
 
 sendButton.addEventListener('click', sendMessage);

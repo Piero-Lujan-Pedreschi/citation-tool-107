@@ -16,6 +16,16 @@
             <div class="sidebar-header">
                 <h2>NeuroScript</h2>
                 <p>R.C.C.D's Writing Assistant</p>
+                <div class="auth-section">
+                    <div id="guestMode" class="guest-info">
+                        <span>Guest Mode</span>
+                        <button id="signInBtn" class="auth-link-btn">Sign In</button>
+                    </div>
+                    <div id="userMode" class="user-info" style="display: none;">
+                        <span id="userName"></span>
+                        <button id="logoutBtn" class="logout-btn">Logout</button>
+                    </div>
+                </div>
             </div>
             <div class="sidebar-content">
                 <button class="new-chat-btn" onclick="clearChat()">New chat</button>
@@ -26,6 +36,10 @@
                     <hr>
                     <button class="tool-btn" onclick="suggestStructure()">Essay Structure</button>
                     <hr>
+                </div>
+                <div id="chatHistory" class="chat-history-section" style="display: none;">
+                    <h3>Chat History</h3>
+                    <div id="chatHistoryList" class="chat-history-list"></div>
                 </div>
             </div>
         </div>
@@ -54,5 +68,117 @@
     </div>
     
     <script src="script.js"></script>
+    <script>
+        // Check authentication on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('userToken');
+            const userName = localStorage.getItem('userName');
+            const userEmail = localStorage.getItem('userEmail');
+            
+            if (token && userName) {
+                // User is signed in
+                document.getElementById('guestMode').style.display = 'none';
+                document.getElementById('userMode').style.display = 'block';
+                document.getElementById('userName').textContent = `Welcome, ${userName}`;
+                
+                // Load chat history
+                loadChatHistory(userEmail);
+                
+                // Logout functionality
+                document.getElementById('logoutBtn').addEventListener('click', function() {
+                    localStorage.removeItem('userToken');
+                    localStorage.removeItem('userName');
+                    localStorage.removeItem('userEmail');
+                    location.reload();
+                });
+            } else {
+                // Guest mode
+                document.getElementById('guestMode').style.display = 'block';
+                document.getElementById('userMode').style.display = 'none';
+                
+                // Sign in button
+                document.getElementById('signInBtn').addEventListener('click', function() {
+                    window.location.href = 'signin.html';
+                });
+            }
+        });
+        
+        // Load chat history function
+        async function loadChatHistory(email) {
+            try {
+                const response = await fetch(`http://localhost:5000/chat-history/${email}`);
+                const data = await response.json();
+                
+                if (response.ok && data.chats.length > 0) {
+                    // Show chat history section
+                    document.getElementById('chatHistory').style.display = 'block';
+                    
+                    // Load chat messages
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = ''; // Clear default message
+                    
+                    data.chats.forEach(chat => {
+                        // Add user message
+                        addMessage(chat.userMessage, 'user');
+                        // Add bot response
+                        addMessage(chat.botResponse, 'assistant');
+                    });
+                    
+                    // Populate sidebar chat history
+                    populateChatHistorySidebar(data.chats);
+                }
+            } catch (error) {
+                console.error('Failed to load chat history:', error);
+            }
+        }
+        
+        // Populate chat history sidebar
+        function populateChatHistorySidebar(chats) {
+            const historyList = document.getElementById('chatHistoryList');
+            historyList.innerHTML = '';
+            
+            // Group chats by conversation (every user-bot pair)
+            const conversations = [];
+            for (let i = 0; i < chats.length; i += 2) {
+                if (chats[i] && chats[i + 1]) {
+                    conversations.push({
+                        userMessage: chats[i].userMessage,
+                        botResponse: chats[i + 1].botResponse,
+                        timestamp: chats[i].timestamp
+                    });
+                }
+            }
+            
+            conversations.slice(-10).reverse().forEach((conv, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'chat-history-item';
+                historyItem.innerHTML = `
+                    <div class="chat-preview">${conv.userMessage.substring(0, 40)}...</div>
+                    <div class="chat-time">${new Date(conv.timestamp).toLocaleDateString()}</div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        // Add message to chat (helper function)
+        function addMessage(message, type) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            
+            const avatar = type === 'user' ? '👨' : '🤖';
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="avatar">${avatar}</div>
+                    <div class="text">
+                        <p>${message}</p>
+                    </div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
 </body>
 </html>
