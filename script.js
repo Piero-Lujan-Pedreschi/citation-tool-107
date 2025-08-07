@@ -3,7 +3,7 @@ const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 
 // Flask LLM endpoint configuration
-const LLM_ENDPOINT = 'http://localhost:5000/chat'; // Local Flask server
+const LLM_ENDPOINT = 'http://localhost:3000/chat'; // Local Flask server
 
 // Typewriter effect function with paragraph support
 function typeWriter(element, text, speed = 3) {
@@ -265,32 +265,56 @@ messageInput.addEventListener('keypress', (e) => {
     }
 });
 
-document.getElementById('fileInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        addMessage(`📎 Uploaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, true);
-        
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const fileContent = event.target.result;
-            addMessage('🦆 Thinking <span class="thinking-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>', false);
-            
-            try {
-                const response = await generateResponseWithFile(`Please analyze this document and provide feedback:`, fileContent, file.name);
-                chatMessages.removeChild(chatMessages.lastChild);
-                addMessage(response, false, true);
-            } catch (error) {
-                chatMessages.removeChild(chatMessages.lastChild);
-                addMessage('Sorry, I had trouble reading the file. Please try again.');
-            }
-        };
-        
-        if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-            reader.readAsText(file);
-        } else {
-            addMessage('Currently only .txt files are supported. Please upload a text file.', false);
-        }
+document.getElementById("fileInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  addMessage(
+    `📎 Uploaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
+    true
+  );
+  addMessage(
+    '🦆 Thinking <span class="thinking-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>',
+    false
+  );
+
+  try {
+    let fileContent = "";
+
+    if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+      fileContent = await file.text();
+    } else if (file.name.endsWith(".docx")) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      fileContent = result.value;
+    } else if (file.name.endsWith(".pdf")) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const strings = content.items.map((item) => item.str);
+        text += strings.join(" ") + "\n";
+      }
+      fileContent = text;
+    } else {
+      throw new Error("Unsupported file type");
     }
+
+    chatMessages.removeChild(chatMessages.lastChild); // remove "thinking..."
+    const response = await generateResponseWithFile(
+      `Please analyze this document and provide feedback:`,
+      fileContent,
+      file.name
+    );
+    addMessage(response, false, true);
+  } catch (error) {
+    chatMessages.removeChild(chatMessages.lastChild);
+    console.error(error);
+    addMessage("❌ Sorry, I had trouble reading the file. Please try again.");
+  }
 });
+
 
 messageInput.focus();
